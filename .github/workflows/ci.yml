@@ -40,7 +40,7 @@ jobs:
           fantomas .
         
       - name: Run project
-        run: dotnet run --project .
+        run: dotnet run data.csv
         
       - name: Tests
         run: dotnet test --logger "console;verbosity=detailed" 
