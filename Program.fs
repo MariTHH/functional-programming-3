@@ -1,6 +1,4 @@
-﻿module Program
-
-open System
+﻿open System
 open System.IO
 open Interpolation
 
@@ -11,13 +9,13 @@ type InterpolationMethod =
       Points: seq<Point>
       Step: float
       Func: (seq<Point> -> float -> float -> seq<Point>) }
-
+let readDataPoint () : Point =
+    Console.ReadLine() |> fun line -> 
+        let parts = line.Split(" ")
+        (float parts.[0], float parts.[1])
 let parsePoint (line: string) : Point =
     let parts = line.Split(" ")
     (float parts.[0], float parts.[1])
-
-let readDataPoint () : Point =
-    Console.ReadLine() |> parsePoint
 
 let addPointToSequence (points: seq<Point>) (point: Point) =
     Seq.append points (Seq.singleton point)
@@ -44,18 +42,12 @@ let processInterpolation (methods: seq<InterpolationMethod>) =
                 printfn "Not enough points for %s interpolation." method.Name
             else
                 computeAndPrintResult method.Name method.Points method.Step method.Func)
-
         let newPoint = readDataPoint()
 
-        let updatedMethods =
-            currentMethods
-            |> Seq.map (fun method ->
-                let updatedPoints =
-                    if method.Name = "Linear" || Seq.length method.Points >= 4 then
-                        Seq.append (Seq.skip 1 method.Points) (Seq.singleton newPoint)
-                    else
-                        Seq.append method.Points (Seq.singleton newPoint)
-
+        let updatedMethods = 
+            currentMethods 
+            |> Seq.map (fun method -> 
+                let updatedPoints = updatePointsForInterpolation method.Name method.Points newPoint
                 { method with Points = updatedPoints })
 
         loop updatedMethods
@@ -65,8 +57,8 @@ let processInterpolation (methods: seq<InterpolationMethod>) =
 let handleConsoleInput () =
     printf "Step is: "
     let step = Console.ReadLine() |> float
-    let firstPoint = readDataPoint ()
-    let secondPoint = readDataPoint ()
+    let firstPoint = readDataPoint()
+    let secondPoint = readDataPoint()
     let initialPoints = addPointToSequence (Seq.singleton firstPoint) secondPoint
 
     let linear = { Name = "Linear"; Points = initialPoints; Step = step; Func = linearInterpolation }

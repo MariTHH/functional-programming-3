@@ -2,28 +2,28 @@ module Interpolation
 
 open System
 
-let lagrangeInterpolationPoint (points: seq<float * float>) (x: float) =
+type Point = float * float
+
+let lagrangeInterpolationPoint (points: seq<Point>) (x: float) =
     points
-    |> Seq.map (fun (xi, yi) ->
-        let li =
-            points
+    |> Seq.map (fun (xi, yi) -> 
+        let li = 
+            points 
             |> Seq.filter (fun (xj, _) -> xi <> xj)
             |> Seq.fold (fun acc (xj, _) -> acc * (x - xj) / (xi - xj)) 1.0
-
         yi * li)
     |> Seq.sum
 
-let lagrangeInterpolation (points: seq<float * float>) (startX: float) (step: float) =
+let lagrangeInterpolation (points: seq<Point>) (startX: float) (step: float) =
     let rec interpolate currentX acc =
         if currentX <= (Seq.last points |> fst) + step then
             let y = lagrangeInterpolationPoint points currentX
-            interpolate (currentX + step) (Seq.append acc (seq { yield (currentX, y) }))
+            interpolate (currentX + step) (Seq.append acc (seq { yield (currentX, y) } ))
         else
             acc
-
     interpolate startX Seq.empty
 
-let calculateLinearPoint  (x0: float) (y0: float) (x1: float) (y1: float) (x: float) =
+let calculateLinearPoint (x0: float) (y0: float) (x1: float) (y1: float) (x: float) =
     y0 * (x1 - x) / (x1 - x0) + y1 * (x - x0) / (x1 - x0)
 
 let rec interpolate xyPairs (currentStep: float) (incStep: float) =
@@ -31,7 +31,7 @@ let rec interpolate xyPairs (currentStep: float) (incStep: float) =
     | 0 -> Seq.empty
     | _ ->
         let (x0, y0), (x1, y1) = Seq.head xyPairs
-        let newY = calculateLinearPoint  x0 y0 x1 y1 currentStep
+        let newY = calculateLinearPoint x0 y0 x1 y1 currentStep
         let resultSeq = seq { yield (currentStep, newY) }
 
         if currentStep < x1 then
@@ -43,3 +43,15 @@ let linearInterpolation xy (currentStep: float) (incStep: float) =
     let result = interpolate (Seq.pairwise xy) currentStep incStep
     let lastPoint = Seq.last xy
     Seq.append result (Seq.singleton lastPoint)
+
+let updatePointsForInterpolation (methodName: string) (currentPoints: seq<Point>) (newPoint: Point) : seq<Point> =
+    let maxPoints = 
+        match methodName with
+        | "Linear" -> 2 
+        | "Lagrange" -> 4 
+        | _ -> 4  
+
+    if Seq.length currentPoints >= maxPoints then
+        Seq.append (Seq.skip 1 currentPoints) (Seq.singleton newPoint)
+    else
+        Seq.append currentPoints (Seq.singleton newPoint)
