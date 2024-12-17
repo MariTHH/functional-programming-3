@@ -9,10 +9,13 @@ type InterpolationMethod =
       Points: seq<Point>
       Step: float
       Func: (seq<Point> -> float -> float -> seq<Point>) }
+
+// Чтение данных из консоли и добавление новой точки
 let readDataPoint () : Point =
     Console.ReadLine() |> fun line -> 
         let parts = line.Split(" ")
         (float parts.[0], float parts.[1])
+
 let parsePoint (line: string) : Point =
     let parts = line.Split(" ")
     (float parts.[0], float parts.[1])
@@ -20,74 +23,73 @@ let parsePoint (line: string) : Point =
 let addPointToSequence (points: seq<Point>) (point: Point) =
     Seq.append points (Seq.singleton point)
 
-let computeAndPrintResult methodName points step interpolationFunc =
-    let results = interpolationFunc points (fst (Seq.head points)) step
-    printfn "%s" methodName
+let computeAndPrintResults methodName points step interpolationFunc =
+    if Seq.isEmpty points then
+        printfn "No points provided for %s interpolation." methodName
+    elif methodName = "Lagrange" && Seq.length points < 4 then
+        printfn "Not enough points for %s interpolation." methodName
+    else
+        let results = interpolationFunc points step
+        if Seq.isEmpty results then
+            printfn "No results produced for %s interpolation." methodName
+        else
+            printfn "%s" methodName
+            let formatValues = Seq.map (sprintf "%.2f")
+            let xValues = results |> Seq.map fst |> formatValues |> Seq.toArray
+            let yValues = results |> Seq.map snd |> formatValues |> Seq.toArray
 
-    let formatValues = Seq.map (sprintf "%.2f")
-    let xValues = results |> Seq.map fst |> formatValues
-    let yValues = results |> Seq.map snd |> formatValues
+            printfn "%s" (String.Join("    ", xValues))
+            printfn "%s" (String.Join("    ", yValues))
+            printfn ""
 
-    let adjustedValues values =
-        if methodName = "Linear" then Seq.take (Seq.length results - 1) values else values
+let rec processInterpolation pointsLinear pointsLagrange step =
+    computeAndPrintResults "Linear" pointsLinear step linearInterpolation
+    computeAndPrintResults "Lagrange" pointsLagrange step lagrangeInterpolation
 
-    printfn "%s" (String.Join("    ", adjustedValues xValues))
-    printfn "%s" (String.Join("    ", adjustedValues yValues))
-    printfn ""
+    let newPoint = 
+        let parts = Console.ReadLine().Split(" ")
+        (float parts.[0], float parts.[1])
 
-let processInterpolation (methods: seq<InterpolationMethod>) =
-    let rec loop (currentMethods: seq<InterpolationMethod>) =
-        currentMethods |> Seq.iter (fun method ->
-            if method.Name = "Lagrange" && Seq.length method.Points < 4 then
-                printfn "Not enough points for %s interpolation." method.Name
-            else
-                computeAndPrintResult method.Name method.Points method.Step method.Func)
-        let newPoint = readDataPoint()
+    let newPointsLinear = updatePoints "Linear" pointsLinear newPoint
+    let newPointsLagrange = updatePoints "Lagrange" pointsLagrange newPoint
 
-        let updatedMethods = 
-            currentMethods 
-            |> Seq.map (fun method -> 
-                let updatedPoints = updatePointsForInterpolation method.Name method.Points newPoint
-                { method with Points = updatedPoints })
+    processInterpolation newPointsLinear newPointsLagrange step
 
-        loop updatedMethods
-
-    loop methods
 
 let handleConsoleInput () =
     printf "Step is: "
     let step = Console.ReadLine() |> float
-    let firstPoint = readDataPoint()
-    let secondPoint = readDataPoint()
-    let initialPoints = addPointToSequence (Seq.singleton firstPoint) secondPoint
+    printfn "Enter two initial data points (x y):"
+    let firstPoint = 
+        let parts = Console.ReadLine().Split(" ")
+        (float parts.[0], float parts.[1])
 
-    let linear = { Name = "Linear"; Points = initialPoints; Step = step; Func = linearInterpolation }
-    let lagrange = { Name = "Lagrange"; Points = initialPoints; Step = step; Func = lagrangeInterpolation }
+    let secondPoint = 
+        let parts = Console.ReadLine().Split(" ")
+        (float parts.[0], float parts.[1])
 
-    processInterpolation (Seq.singleton linear |> Seq.append (Seq.singleton lagrange))
+    let initialPoints = seq { yield firstPoint; yield secondPoint }
+    processInterpolation initialPoints initialPoints step
 
 let handleFileInput (filePath: string) =
     let lines = File.ReadAllLines(filePath)
+    let step = lines.[0] |> float
+    let points = lines |> Array.skip 1 |> Array.map (fun line -> 
+        let parts = line.Split(" ")
+        (float parts.[0], float parts.[1])) |> Seq.ofArray
 
-    if lines.Length < 1 then
-        printfn "File is empty or not formatted correctly."
-        1
-    else
-        let step = lines.[0] |> float
-        let points = lines |> Array.skip 1 |> Array.map parsePoint |> Seq.ofArray
-
-        computeAndPrintResult "Linear" points step linearInterpolation
-        computeAndPrintResult "Lagrange" points step lagrangeInterpolation
-        0
+    computeAndPrintResults "Linear" points step linearInterpolation
+    computeAndPrintResults "Lagrange" points step lagrangeInterpolation
 
 [<EntryPoint>]
-let main (args: string[]) =
+let main args =
     match args.Length with
     | 0 -> 
         handleConsoleInput()
         0
     | 1 -> 
         handleFileInput args.[0]
+        0
     | _ -> 
         printfn "Usage: [no arguments] or [path to file]."
         1
