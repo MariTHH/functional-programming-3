@@ -10,7 +10,6 @@ type InterpolationMethod =
       Step: float
       Func: (seq<Point> -> float -> float -> seq<Point>) }
 
-// Чтение данных из консоли и добавление новой точки
 let readDataPoint () : Point =
     Console.ReadLine() |> fun line -> 
         let parts = line.Split(" ")
@@ -42,7 +41,7 @@ let computeAndPrintResults methodName points step interpolationFunc =
             printfn "%s" (String.Join("    ", yValues))
             printfn ""
 
-let rec processInterpolation pointsLinear pointsLagrange step =
+let rec interactive pointsLinear pointsLagrange step =
     computeAndPrintResults "Linear" pointsLinear step linearInterpolation
     computeAndPrintResults "Lagrange" pointsLagrange step lagrangeInterpolation
 
@@ -53,7 +52,7 @@ let rec processInterpolation pointsLinear pointsLagrange step =
     let newPointsLinear = updatePoints "Linear" pointsLinear newPoint
     let newPointsLagrange = updatePoints "Lagrange" pointsLagrange newPoint
 
-    processInterpolation newPointsLinear newPointsLagrange step
+    interactive newPointsLinear newPointsLagrange step
 
 
 let handleConsoleInput () =
@@ -69,7 +68,7 @@ let handleConsoleInput () =
         (float parts.[0], float parts.[1])
 
     let initialPoints = seq { yield firstPoint; yield secondPoint }
-    processInterpolation initialPoints initialPoints step
+    interactive initialPoints initialPoints step
 
 let handleFileInput (filePath: string) =
     let lines = File.ReadAllLines(filePath)
