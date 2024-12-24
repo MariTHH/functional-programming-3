@@ -2,26 +2,6 @@
 open System.IO
 open Interpolation
 
-type Point = float * float
-
-type InterpolationMethod =
-    { Name: string
-      Points: seq<Point>
-      Step: float
-      Func: (seq<Point> -> float -> float -> seq<Point>) }
-
-let readDataPoint () : Point =
-    Console.ReadLine() |> fun line -> 
-        let parts = line.Split(" ")
-        (float parts.[0], float parts.[1])
-
-let parsePoint (line: string) : Point =
-    let parts = line.Split(" ")
-    (float parts.[0], float parts.[1])
-
-let addPointToSequence (points: seq<Point>) (point: Point) =
-    Seq.append points (Seq.singleton point)
-
 let computeAndPrintResults methodName points step interpolationFunc =
     if Seq.isEmpty points then
         printfn "No points provided for %s interpolation." methodName
@@ -91,4 +71,4 @@ let main args =
         0
     | _ -> 
         printfn "Usage: [no arguments] or [path to file]."
-        1
+        1 
