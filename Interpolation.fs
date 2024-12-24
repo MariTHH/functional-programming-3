@@ -42,11 +42,8 @@ let lagrangeInterpolation (points: seq<Point>) (step: float) =
     interpolate (fst (Seq.head points)) Seq.empty
 
 let updatePoints (methodName: string) (currentPoints: seq<Point>) (newPoint: Point) =
-    let maxPoints = match methodName with 
-                    | "Linear" -> 2 
-                    | "Lagrange" -> 4 
-                    | _ -> 4
-    if Seq.length currentPoints >= maxPoints then
-        Seq.append (Seq.skip 1 currentPoints) (Seq.singleton newPoint)
-    else
-        Seq.append currentPoints (Seq.singleton newPoint)
+    if methodName = "Linear" || Seq.length currentPoints >= 4 then
+            Seq.append (Seq.skip 1 currentPoints) (Seq.singleton newPoint)
+        else
+            Seq.append currentPoints (Seq.singleton newPoint)
+
