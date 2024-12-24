@@ -38,7 +38,6 @@ let rec interactive pointsLinear pointsLagrange step =
 let handleConsoleInput () =
     printf "Step is: "
     let step = Console.ReadLine() |> float
-    printfn "Enter two initial data points (x y):"
     let firstPoint = 
         let parts = Console.ReadLine().Split(" ")
         (float parts.[0], float parts.[1])
