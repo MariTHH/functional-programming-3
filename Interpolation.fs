@@ -9,18 +9,23 @@ let calculateLinearPoint (x0: float) (y0: float) (x1: float) (y1: float) (x: flo
     y0 * (x1 - x) / (x1 - x0) + y1 * (x - x0) / (x1 - x0)
 
 let linearInterpolation (points: seq<Point>) (step: float) =
-    let rec interpolate currentStep remainingPoints acc =
-        match Seq.length remainingPoints with
-        | 1 -> Seq.append acc remainingPoints  
-        | _ ->
-            let (x0, y0), (x1, y1) = Seq.head remainingPoints, Seq.head (Seq.tail remainingPoints)
+    let rec interpolate currentStep acc pairs =
+        match pairs with
+        | [] -> acc
+        | (x0, y0, x1, y1)::tail ->
             if currentStep < x1 then
                 let newY = calculateLinearPoint x0 y0 x1 y1 currentStep
-                let resultSeq = seq { yield (currentStep, newY) }
-                interpolate (currentStep + step) remainingPoints (Seq.append acc resultSeq)
+                interpolate (currentStep + step) (Seq.append acc (seq { yield (currentStep, newY) })) pairs
             else
-                interpolate (currentStep + step) (Seq.tail remainingPoints) acc
-    interpolate (fst (Seq.head points)) points Seq.empty
+                interpolate currentStep acc tail
+    let pairs = 
+        points
+        |> Seq.pairwise 
+        |> Seq.map (fun ((x0, y0), (x1, y1)) -> (x0, y0, x1, y1))
+        |> Seq.toList
+    let initialX = fst (Seq.head points)
+    interpolate initialX Seq.empty pairs
+
     
 let lagrangeInterpolationPoint (points: seq<Point>) (x: float) =
     points
